@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Roger Caires">
+<title>Simulador de Consórcio com Lance · por Roger Caires</title>
+<style>
+  :root{
+    --laranja:#EC7000; --laranja-esc:#C85F00; --laranja-claro:#FFF1E6;
+    --azul:#0B2A6F; --azul-2:#163E99; --azul-claro:#EAF0FB;
+    --cinza-0:#F6F7F9; --cinza-1:#E6E8EC; --cinza-2:#B9BEC8; --cinza-3:#6B7280; --texto:#1F2430;
+    --verde:#0E8A5F; --verde-claro:#E6F6EF; --vermelho:#C0392B; --vermelho-claro:#FDECEA;
+    --raio:14px; --sombra:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--cinza-0);color:var(--texto);font-size:15px;line-height:1.45}
+  header{background:linear-gradient(120deg,var(--azul) 0%,var(--azul-2) 100%);color:#fff;padding:18px 20px 22px;border-bottom:5px solid var(--laranja)}
+  .topo{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .logo-slot{width:64px;height:64px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex:0 0 auto;border:2px dashed rgba(255,255,255,.0);position:relative}
+  .logo-slot img{max-width:100%;max-height:100%;object-fit:contain}
+  .logo-slot .ph{font-size:10px;color:var(--cinza-3);text-align:center;padding:4px;line-height:1.2}
+  .logo-slot:hover::after{content:"trocar";position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;text-align:center;padding:2px}
+  .autoria{display:inline-flex;align-items:center;gap:10px;background:var(--laranja);color:#fff;border-radius:999px;padding:5px 18px 5px 5px;font-size:14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+  .autoria .av{width:34px;height:34px;border-radius:50%;background:#fff;color:var(--laranja-esc);font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:14px;letter-spacing:.5px}
+  .autoria b{font-weight:800;font-size:17px;letter-spacing:.2px}
+  .assin{max-width:1200px;margin:6px auto 0;padding:0 14px}
+  .assin-card{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);border-left:6px solid var(--laranja);padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .assin-card .av{width:48px;height:48px;border-radius:50%;background:var(--azul);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .assin-card .nm{font-size:20px;font-weight:800;color:var(--azul)}
+  .assin-card .cg{font-size:13px;color:var(--cinza-3)}
+  .assin-card .tag{margin-left:auto;font-size:12px;color:var(--laranja-esc);font-weight:700;background:var(--laranja-claro);padding:4px 10px;border-radius:999px}
+  .sens td.melhor{color:var(--verde);font-weight:700}
+  .autoria em{font-style:normal;opacity:.9;margin-left:6px;padding-left:6px;border-left:1px solid rgba(255,255,255,.5)}
+  @media (max-width:480px){.autoria em{display:none!important}}
+  .titulo h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.2px}
+  .titulo p{margin:2px 0 0;opacity:.85;font-size:13.5px}
+  .ident{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .ident input[type=text]{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:7px 10px;font-size:13px;width:180px}
+  .ident input::placeholder{color:rgba(255,255,255,.7)}
+  main{max-width:1200px;margin:18px auto;padding:0 14px;display:grid;grid-template-columns:380px 1fr;gap:18px}
+  main>section{min-width:0}
+  @media (max-width:960px){main{grid-template-columns:minmax(0,1fr)}.ident{margin-left:0;width:100%}.ident input[type=text]{width:100%}}
+  .card{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);padding:16px 16px 14px;margin-bottom:16px}
+  .card h2{font-size:15px;margin:0 0 12px;color:var(--azul);display:flex;align-items:center;gap:8px}
+  .card h2 .n{background:var(--laranja);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  .campo{margin-bottom:11px}
+  .campo label{display:block;font-size:12.5px;color:var(--cinza-3);margin-bottom:4px;font-weight:600}
+  .campo .linha{display:flex;gap:8px;align-items:center}
+  input[type=number],input[type=text],select{width:100%;padding:9px 10px;border:1px solid var(--cinza-1);border-radius:9px;font-size:14.5px;background:#fff;color:var(--texto)}
+  input:focus,select:focus{outline:2px solid var(--laranja);outline-offset:-1px;border-color:transparent}
+  .sufixo{position:relative}
+  .sufixo span{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--cinza-3);font-size:13px;pointer-events:none}
+  .sufixo input{padding-right:42px}
+  .prefixo{position:relative}
+  .prefixo span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--cinza-3);font-size:13px;pointer-events:none}
+  .prefixo input{padding-left:34px}
+  .dica{font-size:11.5px;color:var(--cinza-3);margin-top:3px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  input[type=range]{width:100%;accent-color:var(--laranja)}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;user-select:none;margin-bottom:8px}
+  .toggle input{accent-color:var(--laranja);width:16px;height:16px}
+  .seg{display:flex;background:var(--cinza-0);border-radius:10px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:transparent;padding:8px 6px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--cinza-3);cursor:pointer}
+  .seg button.ativo{background:#fff;color:var(--laranja-esc);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .alerta{border-radius:10px;padding:9px 11px;font-size:12.8px;margin:8px 0}
+  .alerta.warn{background:#FFF7E0;color:#7A5300;border:1px solid #F5DB8B}
+  .alerta.erro{background:var(--vermelho-claro);color:var(--vermelho);border:1px solid #F3B7B0}
+  .alerta.ok{background:var(--verde-claro);color:var(--verde);border:1px solid #A9DFC7}
+  .alerta.info{background:var(--azul-claro);color:var(--azul);border:1px solid #C6D4F2}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  @media (max-width:640px){.kpis{grid-template-columns:1fr 1fr}}
+  .kpi{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);padding:13px 14px;border-top:4px solid var(--cinza-1)}
+  .kpi.dest{border-top-color:var(--laranja);background:linear-gradient(180deg,var(--laranja-claro),#fff 70%)}
+  .kpi.azul{border-top-color:var(--azul-2)}
+  .kpi .rot{font-size:11.5px;color:var(--cinza-3);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .kpi .val{font-size:22px;font-weight:800;color:var(--azul);margin-top:3px;white-space:nowrap}
+  .kpi.dest .val{color:var(--laranja-esc);font-size:25px}
+  .kpi .sub{font-size:12px;color:var(--cinza-3);margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:8px 8px;text-align:right;border-bottom:1px solid var(--cinza-1)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--cinza-3);background:var(--cinza-0)}
+  tr.sel td{background:var(--laranja-claro);font-weight:700}
+  .tabela-wrap{overflow-x:auto}
+  .lista{display:grid;grid-template-columns:1fr auto;gap:6px 14px;font-size:13.8px}
+  .lista .r{text-align:right;font-weight:600;white-space:nowrap}
+  .lista .tot{border-top:1px solid var(--cinza-1);padding-top:6px;font-weight:800;color:var(--azul)}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){.duas{grid-template-columns:1fr}}
+  .acoes{display:flex;flex-wrap:wrap;gap:8px}
+  .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .btn.prim{background:var(--laranja);color:#fff}.btn.prim:hover{background:var(--laranja-esc)}
+  .btn.sec{background:var(--azul-claro);color:var(--azul)}.btn.sec:hover{background:#dbe5f8}
+  .btn.ghost{background:transparent;color:var(--cinza-3);border:1px solid var(--cinza-1)}
+  details summary{cursor:pointer;font-weight:700;color:var(--azul);font-size:14px}
+  details[open] summary{margin-bottom:10px}
+  .chart{width:100%;height:220px}
+  .legenda{display:flex;gap:14px;font-size:12px;color:var(--cinza-3);margin-top:4px;flex-wrap:wrap}
+  .legenda i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .metodo p,.metodo li{font-size:13px;color:#3b4252}
+  .metodo code{background:var(--cinza-0);padding:1px 5px;border-radius:5px;font-size:12.5px}
+  footer{max-width:1200px;margin:6px auto 30px;padding:0 14px;color:var(--cinza-3);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  footer b{color:var(--azul)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--azul);color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  .toast.on{opacity:1}
+  .pill{display:inline-block;background:var(--azul-claro);color:var(--azul);border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:700}
+  .pill.lar{background:var(--laranja-claro);color:var(--laranja-esc)}
+  .print-only{display:none}
+  @media print{
+    body{background:#fff;font-size:12px}
+    header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    main{display:block;margin:8px 0}
+    .no-print,.ident input{display:none!important}
+    .print-only{display:block}
+    .card,.kpi{box-shadow:none;border:1px solid var(--cinza-1);break-inside:avoid}
+    details{display:block}
+    .kpis{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topo">
+    <div class="logo-slot no-print-border" id="logoSlot" title="Clique para inserir o logo">
+      <span class="ph" id="logoPh">Clique para<br>inserir o logo</span>
+      <img id="logoImg" alt="Logo" style="display:none">
+    </div>
+    <input type="file" id="logoFile" accept="image/*" style="display:none">
+    <div class="titulo">
+      <div class="autoria" id="autoria"><span class="av" id="autorIni">RC</span><span>Desenvolvido por <b id="autorNome">Roger Caires</b><em id="autorCargo"></em></span></div>
+      <h1>Simulador de Consórcio com Lance</h1>
+      <p>Parcela pós-contemplação · lance livre, embutido e FGTS · reduzir parcela ou prazo</p>
+    </div>
+    <div class="ident">
+      <input type="text" id="cliente" placeholder="Nome do cliente (não é salvo)">
+      <input type="text" id="gerente" placeholder="Gerente responsável">
+    </div>
+  </div>
+  <div class="print-only" style="max-width:1200px;margin:8px auto 0;font-size:12px" id="printIdent"></div>
+</header>
+
+<div class="assin">
+  <div class="assin-card">
+    <div class="av">RC</div>
+    <div>
+      <div class="nm">Roger Caires</div>
+      <div class="cg">Idealizador e desenvolvedor do simulador · <span id="assinCargo"></span></div>
+    </div>
+    <div class="tag">Ferramenta de apoio comercial · v2</div>
+  </div>
+</div>
+
+<main>
+  <!-- ============ COLUNA DE ENTRADAS ============ -->
+  <section class="no-print-col">
+    <div class="card">
+      <h2><span class="n">1</span>Dados do plano</h2>
+      <div class="campo">
+        <label>Tipo de simulação</label>
+        <div class="seg" id="segTipo">
+          <button data-t="nova" class="ativo">Cota nova (projeção)</button>
+          <button data-t="existente">Cota existente (extrato)</button>
+        </div>
+        <div class="dica" id="dicaTipo"></div>
+      </div>
+      <div class="campo">
+        <label>Segmento</label>
+        <select id="segmento">
+          <option value="imovel">Imóvel</option>
+          <option value="veiculo">Veículo (auto)</option>
+          <option value="moto">Moto</option>
+          <option value="pesados">Pesados</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Valor da carta de crédito</label>
+        <div class="prefixo"><span>R$</span><input type="number" id="carta" min="1000" step="1000" inputmode="decimal"></div>
+      </div>
+      <div class="grid2">
+        <div class="campo">
+          <label>Prazo da cota</label>
+          <div class="sufixo"><input type="number" id="prazo" min="6" max="240" step="1" inputmode="numeric"><span>meses</span></div>
+        </div>
+        <div class="campo">
+          <label>Taxa de adm. total</label>
+          <div class="sufixo"><input type="number" id="ta" min="0" max="40" step="0.01" inputmode="decimal"><span>%</span></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="campo">
+          <label>Fundo de reserva</label>
+          <div class="sufixo"><input type="number" id="fr" min="0" max="10" step="0.01" inputmode="decimal"><span>%</span></div>
+        </div>
+        <div class="campo">
+          <label>Parcela reduzida</label>
+          <select id="reducao">
+            <option value="0">Integral (100%)</option>
+            <option value="30">Reduzida 30%</option>
+            <option value="50">Reduzida 50%</option>
+          </select>
+        </div>
+      </div>
+      <div class="campo" id="boxRedMeses" style="display:none">
+        <label>Redução vale até o mês (se não contemplar antes)</label>
+        <div class="sufixo"><input type="number" id="redMeses" min="1" step="1"><span>mês</span></div>
+        <div class="dica">A redução incide só sobre o fundo comum. A diferença não paga volta para o saldo devedor e é diluída depois.</div>
+      </div>
+
+      <label class="toggle"><input type="checkbox" id="segOn"> Incluir seguro prestamista</label>
+      <div class="campo" id="boxSeg" style="display:none">
+        <label>Seguro (% ao mês sobre o saldo devedor)</label>
+        <div class="sufixo"><input type="number" id="segTaxa" min="0" max="1" step="0.001" inputmode="decimal"><span>% a.m.</span></div>
+        <div class="dica">Use a taxa da proposta. Opcional — quita o saldo em caso de morte/invalidez.</div>
+      </div>
+
+      <label class="toggle"><input type="checkbox" id="reajOn"> Projetar reajuste anual da carta</label>
+      <div class="campo" id="boxReaj" style="display:none">
+        <label id="lblReaj">Reajuste estimado (% ao ano)</label>
+        <div class="sufixo"><input type="number" id="reaj" min="0" max="30" step="0.1" inputmode="decimal"><span>% a.a.</span></div>
+        <div class="dica" id="dicaReaj"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">2</span>Contemplação e lance</h2>
+      <div class="campo" id="boxMes">
+        <label>Contemplação estimada na parcela nº <span class="pill lar" id="lblMes">12</span></label>
+        <input type="range" id="mesRange" min="1" max="200" step="1">
+        <div class="linha" style="margin-top:6px">
+          <div class="sufixo" style="flex:1"><input type="number" id="mes" min="1" step="1"><span>mês</span></div>
+        </div>
+        <div class="dica">Premissa, não garantia. Veja abaixo a tabela "E se for contemplado em outro mês?".</div>
+      </div>
+      <div id="boxEx" style="display:none">
+        <div class="grid2">
+          <div class="campo">
+            <label>Parcelas já pagas</label>
+            <div class="sufixo"><input type="number" id="exPagas" min="1" step="1" inputmode="numeric"><span>parc.</span></div>
+          </div>
+          <div class="campo">
+            <label>% já pago (extrato)</label>
+            <div class="sufixo"><input type="number" id="exPct" min="0" max="200" step="0.0001" inputmode="decimal"><span>%</span></div>
+          </div>
+        </div>
+        <div class="campo">
+          <label>Valor atual da carta (extrato)</label>
+          <div class="prefixo"><span>R$</span><input type="number" id="exCarta" min="1000" step="100" inputmode="decimal"></div>
+          <div class="dica">"% já pago" = soma de fundo comum + taxa de adm. + fundo de reserva já quitados, como aparece no extrato da cota. Se o extrato mostrar só o saldo devedor em %, use: % pago = categoria − saldo.</div>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Lance embutido (parte da própria carta)</label>
+        <div class="grid2">
+          <div class="sufixo"><input type="number" id="embPct" min="0" max="100" step="0.5" inputmode="decimal"><span>%</span></div>
+          <select id="embBase" title="Base de cálculo do embutido">
+            <option value="cat">% da categoria</option>
+            <option value="carta">% da carta</option>
+          </select>
+        </div>
+        <div class="dica" id="dicaEmb"></div>
+      </div>
+      <div class="campo">
+        <label>% do lance calculado sobre</label>
+        <select id="lanceBase">
+          <option value="cat">Categoria (carta + taxas)</option>
+          <option value="carta">Carta de crédito</option>
+          <option value="saldo">Saldo devedor</option>
+        </select>
+        <div class="dica">Use a regra do regulamento do grupo — é ela que decide quem vence a assembleia.</div>
+      </div>
+      <div class="grid2">
+        <div class="campo">
+          <label>Limite do embutido</label>
+          <div class="sufixo"><input type="number" id="embMax" min="0" max="100" step="1"><span>%</span></div>
+        </div>
+        <div class="campo">
+          <label>Recursos próprios</label>
+          <div class="prefixo"><span>R$</span><input type="number" id="proprio" min="0" step="500" inputmode="decimal"></div>
+        </div>
+      </div>
+      <div class="campo" id="boxFgts">
+        <label>FGTS (somente imóvel)</label>
+        <div class="prefixo"><span>R$</span><input type="number" id="fgts" min="0" step="500" inputmode="decimal"></div>
+      </div>
+
+      <div class="campo">
+        <label>Como abater o lance</label>
+        <div class="seg" id="segModo">
+          <button data-m="parcela" class="ativo">Reduzir parcela</button>
+          <button data-m="prazo">Reduzir prazo</button>
+          <button data-m="custom">Personalizar</button>
+        </div>
+      </div>
+      <div class="campo" id="boxCustom" style="display:none">
+        <label>Prazo restante desejado: <span class="pill lar" id="lblCustom"></span></label>
+        <input type="range" id="customM" min="1" max="100" step="1">
+        <div class="dica">Entre o menor prazo possível (reduzir prazo) e o prazo restante original (reduzir parcela).</div>
+      </div>
+      <div id="alertas"></div>
+    </div>
+
+    <div class="card no-print">
+      <h2><span class="n">3</span>Dados do grupo e lance-alvo</h2>
+      <div class="grid2">
+        <div class="campo">
+          <label>Cotas ativas no grupo</label>
+          <input type="number" id="gCotas" min="0" step="1" inputmode="numeric">
+        </div>
+        <div class="campo">
+          <label>Sorteios por assembleia</label>
+          <input type="number" id="gSort" min="0" step="1" inputmode="numeric">
+        </div>
+        <div class="campo">
+          <label>Menor lance vencedor recente</label>
+          <div class="sufixo"><input type="number" id="gMenor" min="0" max="100" step="0.01"><span>%</span></div>
+        </div>
+        <div class="campo">
+          <label>Média dos lances vencedores</label>
+          <div class="sufixo"><input type="number" id="gMedia" min="0" max="100" step="0.01"><span>%</span></div>
+        </div>
+      </div>
+      <div class="dica" style="margin-bottom:8px">Pegue no resultado das últimas assembleias do grupo (o ideal são as 6 últimas). Deixe 0 se não tiver o dado.</div>
+      <div class="lista" id="chance" style="margin-bottom:12px"></div>
+      <div class="campo">
+        <label>% de lance-alvo (ex.: média dos vencedores do grupo)</label>
+        <div class="sufixo"><input type="number" id="alvo" min="0" max="100" step="0.5"><span>%</span></div>
+      </div>
+      <div class="lista" id="reversa"></div>
+      <div class="acoes" style="margin-top:10px"><button class="btn sec" id="aplicarAlvo">Aplicar na simulação</button></div>
+      <div class="dica" style="margin-top:6px">Usa o embutido até o limite e completa com recursos próprios (e FGTS, se informado).</div>
+    </div>
+  </section>
+
+  <!-- ============ COLUNA DE RESULTADOS ============ -->
+  <section>
+    <div class="kpis">
+      <div class="kpi azul"><div class="rot">Parcela até contemplar</div><div class="val" id="kParcAntes">—</div><div class="sub" id="kParcAntesSub"></div></div>
+      <div class="kpi dest"><div class="rot">Nova parcela pós-lance</div><div class="val" id="kNova">—</div><div class="sub" id="kNovaSub"></div></div>
+      <div class="kpi"><div class="rot">Prazo restante</div><div class="val" id="kPrazo">—</div><div class="sub" id="kPrazoSub"></div></div>
+      <div class="kpi"><div class="rot">% do lance (competição)</div><div class="val" id="kPct">—</div><div class="sub" id="kPctSub"></div></div>
+      <div class="kpi"><div class="rot">Crédito líquido p/ compra</div><div class="val" id="kCred">—</div><div class="sub" id="kCredSub"></div></div>
+      <div class="kpi"><div class="rot">Desembolso no lance</div><div class="val" id="kDesemb">—</div><div class="sub" id="kDesembSub"></div></div>
+    </div>
+
+    <div class="card">
+      <h2>Comparativo de cenários após a contemplação</h2>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Cenário</th><th>Parcela</th><th>Prazo restante</th><th>Economia/mês</th><th>Total hoje*</th><th>Total projetado**</th></tr></thead>
+          <tbody id="tbCen"></tbody>
+        </table>
+      </div>
+      <div id="cenNota"></div>
+      <div class="dica" style="margin-top:6px">*Parcelas restantes + recursos próprios/FGTS do lance, a valores da contemplação. **Mesmo total com o reajuste anual projetado e o seguro (se ativos) — é aqui que aparece a diferença real entre reduzir parcela e reduzir prazo.</div>
+    </div>
+
+    <div class="card" id="cardSens">
+      <h2>E se for contemplado em outro mês?</h2>
+      <div class="tabela-wrap">
+        <table class="sens">
+          <thead><tr><th>Contemplação</th><th>Saldo após lance</th><th>Parcela (reduzir parcela)</th><th>Meses</th><th>Reduzir prazo: meses</th></tr></thead>
+          <tbody id="tbSens"></tbody>
+        </table>
+      </div>
+      <div class="dica" style="margin-top:6px">Mesmo lance (embutido % + recursos próprios + FGTS) aplicado em meses diferentes, a valores da data de cada contemplação. Mostre essa tabela ao cliente em vez de um número só.</div>
+    </div>
+
+    <div class="duas">
+      <div class="card">
+        <h2>Na assembleia de contemplação</h2>
+        <div class="lista" id="lstContemp"></div>
+      </div>
+      <div class="card">
+        <h2>Composição da parcela</h2>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Item</th><th>Antes</th><th>Depois</th></tr></thead>
+            <tbody id="tbComp"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="duas">
+      <div class="card">
+        <h2>Custo efetivo do consórcio</h2>
+        <div class="lista" id="lstCusto"></div>
+        <div class="dica" style="margin-top:6px">Taxa interna de retorno dos fluxos: parcelas e lance pagos × crédito líquido recebido. Considera o reajuste projetado, se ativado.</div>
+      </div>
+      <div class="card">
+        <h2>Comparar com financiamento</h2>
+        <div class="grid2">
+          <div class="campo">
+            <label>Taxa (% ao mês)</label>
+            <div class="sufixo"><input type="number" id="taxaFin" min="0" max="10" step="0.01"><span>% a.m.</span></div>
+          </div>
+          <div class="campo">
+            <label>Sistema</label>
+            <select id="sisFin"><option value="sac">SAC</option><option value="price">Price</option></select>
+          </div>
+          <div class="campo">
+            <label>Prazo do financiamento</label>
+            <div class="sufixo"><input type="number" id="prazoFin" min="1" max="420" step="1"><span>meses</span></div>
+          </div>
+          <div class="campo">
+            <label>Seguros/IOF (% a.m. s/ saldo)</label>
+            <div class="sufixo"><input type="number" id="segFin" min="0" max="1" step="0.001"><span>% a.m.</span></div>
+          </div>
+        </div>
+        <div class="campo" id="boxAluguel">
+          <label>Aluguel pago enquanto espera a contemplação</label>
+          <div class="prefixo"><span>R$</span><input type="number" id="aluguel" min="0" step="100"></div>
+        </div>
+        <div class="lista" id="lstFin"></div>
+        <div id="finFrase"></div>
+        <div class="dica" style="margin-top:6px">Compara a jornada inteira: no consórcio entram as parcelas pagas antes da contemplação e o aluguel da espera; no financiamento, o bem vem no mês 1 e a entrada é o mesmo valor que seria dado de lance. Sem tarifas e sem TR/correção. Referência didática.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Evolução da parcela</h2>
+      <svg class="chart" id="chart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+      <div class="legenda"><span><i style="background:var(--azul-2)"></i>Antes da contemplação</span><span><i style="background:var(--laranja)"></i>Após a contemplação (cenário escolhido)</span><span><i style="background:var(--cinza-2)"></i>Sem lance (referência)</span></div>
+    </div>
+
+    <div class="card">
+      <details id="detTabela">
+        <summary>Tabela mês a mês (cenário escolhido)</summary>
+        <div class="tabela-wrap" style="max-height:420px;overflow:auto">
+          <table>
+            <thead><tr><th>Mês</th><th>Fase</th><th>% pago</th><th>Parcela</th><th>Seguro</th><th>Total</th><th>Saldo devedor</th></tr></thead>
+            <tbody id="tbMes"></tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+
+    <div class="card no-print">
+      <div class="acoes">
+        <button class="btn prim" id="btnZap">Copiar resumo (WhatsApp/e-mail)</button>
+        <button class="btn sec" id="btnPrint">Imprimir / salvar PDF</button>
+        <button class="btn sec" id="btnCsv">Exportar tabela (CSV)</button>
+        <button class="btn ghost" id="btnReset">Restaurar padrões</button>
+      </div>
+    </div>
+
+    <div class="card metodo">
+      <details>
+        <summary>Como o cálculo é feito (metodologia)</summary>
+        <p>O consórcio é controlado em <b>percentuais do valor do bem (carta)</b>, não em reais. Por isso o valor em R$ muda com o reajuste, mas o percentual que você deve ao grupo não.</p>
+        <ul>
+          <li><b>Categoria</b> = 100% (fundo comum) + taxa de administração + fundo de reserva. Ex.: carta R$ 100 mil, TA 18%, FR 2% → categoria = 120% = R$ 120 mil.</li>
+          <li><b>Parcela integral</b> = categoria ÷ prazo. Na parcela reduzida, só a parte do fundo comum é reduzida (30% ou 50%); taxa de administração e fundo de reserva são cobrados integralmente.</li>
+          <li><b>Saldo devedor na contemplação</b> = categoria − soma dos percentuais já pagos (inclui a diferença não paga da parcela reduzida).</li>
+          <li><b>% do lance para competição</b> = valor total do lance ÷ base definida no regulamento (padrão: categoria = bem + taxa de administração + fundo de reserva; alguns grupos usam a carta ou o saldo devedor). É esse percentual que define o vencedor na assembleia.</li>
+          <li><b>Cota existente</b>: em vez de projetar o passado, usa o % já pago e o valor atual da carta do extrato — é a forma mais precisa de simular para quem já está no grupo.</li>
+          <li><b>Chance de sorteio</b> ≈ 1 − (1 − sorteios ÷ cotas ativas)<sup>meses</sup>. Aproximação: ignora cotas que saem do grupo ao serem contempladas.</li>
+          <li><b>Lance embutido</b> sai da própria carta: abate o saldo devedor, mas reduz o crédito disponível para compra. O padrão aqui é calculado sobre a categoria, com limite de 30% (editável, pois alguns grupos têm limitador próprio).</li>
+          <li><b>Saldo após o lance</b> = saldo devedor − (lance em R$ ÷ carta atualizada).</li>
+          <li><b>Reduzir parcela</b>: nova parcela = saldo após lance ÷ parcelas restantes.<br><b>Reduzir prazo</b>: mantém a parcela integral e amortiza "de trás para frente"; prazo = saldo ÷ parcela integral (a última pode ser menor).<br><b>Personalizar</b>: escolhe um prazo intermediário; parcela = saldo ÷ prazo escolhido.</li>
+          <li><b>Seguro prestamista</b> (opcional) = taxa mensal × saldo devedor em R$, por isso diminui ao longo do tempo.</li>
+          <li><b>Reajuste</b>: a carta e o saldo são corrigidos no aniversário do grupo (INCC para imóvel; IPCA, tabela FIPE/montadora ou pré-fixado para veículos), inclusive após a contemplação.</li>
+        </ul>
+        <p><b>Importante:</b> simulação de apoio comercial, não vinculante. Taxas, limitadores de lance, base do embutido, regra de rateio pós-contemplação e índice de reajuste variam por grupo — confirme sempre na proposta e no regulamento do grupo.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>Desenvolvido por <b>Roger Caires</b> · © 2026 · Ferramenta de apoio aos gerentes e ao time comercial</div>
+  <div>Simulação não vinculante · confirme as condições na proposta do grupo</div>
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ======================================================================
+   Simulador de Consórcio com Lance — v2
+   Desenvolvido por Roger Caires
+   CONFIGURAÇÃO: para distribuir com o logo embutido, cole a imagem em
+   base64 (ex.: "data:image/png;base64,iVBOR...") ou uma URL em LOGO_SRC.
+   ====================================================================== */
+const LOGO_SRC = "";
+const AUTOR = "Roger Caires";
+const AUTOR_CARGO = "Gerente de Relacionamento Uniclass"; // deixe "" para ocultar
+
+const PADROES = {
+  imovel:  {carta:300000, prazo:200, ta:18, fr:2, reaj:6.0, idx:"INCC", taxaFin:0.95, sisFin:"sac", segFin:0.03},
+  veiculo: {carta:120000, prazo:80,  ta:15, fr:2, reaj:4.5, idx:"IPCA / tabela FIPE ou montadora", taxaFin:1.79, sisFin:"price", segFin:0},
+  moto:    {carta:25000,  prazo:60,  ta:16, fr:2, reaj:4.5, idx:"IPCA / tabela FIPE", taxaFin:2.2, sisFin:"price", segFin:0},
+  pesados: {carta:500000, prazo:100, ta:13, fr:2, reaj:4.5, idx:"IPCA / tabela FIPE", taxaFin:1.6, sisFin:"price", segFin:0}
+};
+const BASE = {segmento:"imovel", tipo:"nova", reducao:"0", segOn:false, segTaxa:0.035, reajOn:false,
+              mes:12, exPagas:24, exPct:28.8, embPct:0, embBase:"cat", embMax:30, lanceBase:"cat", proprio:60000, fgts:0,
+              modo:"parcela", alvo:40, gCotas:0, gSort:0, gMenor:0, gMedia:0, aluguel:0};
+
+const $ = id => document.getElementById(id);
+const brl = v => (isFinite(v)?v:0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const pct = (v,d=2) => (isFinite(v)?v:0).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})+"%";
+const num = id => { const v = parseFloat($(id).value); return isFinite(v)?v:0; };
+const clamp = (v,a,b) => Math.min(Math.max(v,a),b);
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+let modo = "parcela";
+let tipo = "nova";
+let ultimo = null;
+
+/* ---------------- Logo ---------------- */
+function carregaLogo(){
+  const src = LOGO_SRC || store.get("simcons_logo");
+  if(src){ $("logoImg").src = src; $("logoImg").style.display="block"; $("logoPh").style.display="none"; }
+}
+$("logoSlot").onclick = () => $("logoFile").click();
+$("logoFile").onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { store.set("simcons_logo", r.result); carregaLogo(); toast("Logo salvo neste navegador"); };
+  r.readAsDataURL(f);
+};
+
+/* ---------------- Estado / persistência ----------------
+   O nome do cliente NUNCA é salvo (privacidade/LGPD). */
+const CAMPOS = ["segmento","carta","prazo","ta","fr","reducao","redMeses","segTaxa","reaj","mes","exPagas","exPct","exCarta",
+  "embPct","embBase","embMax","lanceBase","proprio","fgts","taxaFin","sisFin","prazoFin","segFin","aluguel","alvo",
+  "gCotas","gSort","gMenor","gMedia","gerente"];
+function aplicaPadroesSegmento(seg){
+  const p = PADROES[seg];
+  $("carta").value=p.carta; $("prazo").value=p.prazo; $("ta").value=p.ta; $("fr").value=p.fr;
+  $("reaj").value=p.reaj; $("taxaFin").value=p.taxaFin; $("redMeses").value=p.prazo;
+  $("sisFin").value=p.sisFin; $("segFin").value=p.segFin; $("prazoFin").value=p.prazo; $("exCarta").value=p.carta;
+}
+function restaura(force){
+  let s = null;
+  if(!force){ try{ s = JSON.parse(store.get("simcons_estado_v2")||"null"); }catch(e){ s=null; } }
+  if(!s){
+    $("segmento").value = BASE.segmento; aplicaPadroesSegmento(BASE.segmento);
+    ["reducao","segTaxa","mes","exPagas","exPct","embPct","embBase","embMax","lanceBase","proprio","fgts","alvo","gCotas","gSort","gMenor","gMedia","aluguel"]
+      .forEach(c=>$(c).value=BASE[c]);
+    $("segOn").checked=BASE.segOn; $("reajOn").checked=BASE.reajOn;
+    modo = BASE.modo; tipo = BASE.tipo; $("customM").dataset.v="";
+  } else {
+    CAMPOS.forEach(c=>{ if(s[c]!==undefined && $(c)) $(c).value=s[c]; });
+    $("segOn").checked=!!s.segOn; $("reajOn").checked=!!s.reajOn; modo=s.modo||"parcela"; tipo=s.tipo||"nova"; $("customM").dataset.v=s.customM||"";
+  }
+  document.querySelectorAll("#segModo button").forEach(b=>b.classList.toggle("ativo",b.dataset.m===modo));
+  document.querySelectorAll("#segTipo button").forEach(b=>b.classList.toggle("ativo",b.dataset.t===tipo));
+}
+function salva(){
+  const s={}; CAMPOS.forEach(c=>s[c]=$(c).value);
+  s.segOn=$("segOn").checked; s.reajOn=$("reajOn").checked; s.modo=modo; s.tipo=tipo; s.customM=$("customM").value;
+  store.set("simcons_estado_v2",JSON.stringify(s));
+}
+
+/* ---------------- Motor de cálculo ---------------- */
+function simula(){
+  const seg = $("segmento").value;
+  const C = Math.max(num("carta"),0);
+  const N = Math.max(Math.round(num("prazo")),2);
+  const TA = Math.max(num("ta"),0), FR = Math.max(num("fr"),0);
+  const cat = 100 + TA + FR;                 // % da carta
+  const FC = 100 / N, ADM = (TA+FR) / N;      // % ao mês
+  const mInt = cat / N;                       // parcela integral em %
+  const ex = tipo==="existente";
+  const red = ex ? 0 : parseFloat($("reducao").value)/100;
+  const redMeses = Math.max(Math.round(num("redMeses")),0);
+  const segOn = $("segOn").checked, segTx = num("segTaxa")/100;
+  const reajOn = $("reajOn").checked, r = num("reaj")/100;
+  const k = clamp(Math.round(ex ? num("exPagas") : num("mes")),1,N-1);
+  const Cbase = ex ? Math.max(num("exCarta"),0) : C;
+  const anoK = Math.floor((k-1)/12);
+  // Na cota existente a carta do extrato já está atualizada: só reajusta daqui para frente.
+  const carta = j => !reajOn ? Cbase : (ex ? Cbase*Math.pow(1+r,Math.max(Math.floor((j-1)/12)-anoK,0)) : C*Math.pow(1+r,Math.floor((j-1)/12)));
+
+  // --- Fase pré-contemplação (mês a mês, em %) ---
+  function preFase(kk){
+    const pre=[]; let pago=0;
+    for(let j=1;j<=kk;j++){
+      let p;
+      if(red>0 && j<=redMeses) p = FC*(1-red) + ADM;
+      else p = (cat - pago) / (N - j + 1);
+      const cj = carta(j);
+      const seguro = segOn ? segTx*(cat-pago)/100*cj : 0;
+      pago += p;
+      pre.push({j, fase:"Antes", p, valor:p/100*cj, seguro, saldoPct:cat-pago, saldoR:(cat-pago)/100*cj});
+    }
+    return {pre, pago};
+  }
+  let pre, pago;
+  if(ex){ pre=[]; pago = clamp(num("exPct"),0,cat); }
+  else ({pre, pago} = preFase(k));
+
+  const Ck = carta(k);
+  const catR = Ck*cat/100;
+  const saldoPct = cat - pago, saldoR = saldoPct/100*Ck;
+  const M = N - k;
+  let p1;
+  if(ex){ const pp = saldoPct/M; p1 = {p:pp, valor:pp/100*Ck, seguro: segOn? segTx*saldoR:0}; }
+  else p1 = pre[0];
+
+  // --- Lance ---
+  const embBaseR = $("embBase").value==="cat" ? catR : Ck;
+  const embPct = Math.max(num("embPct"),0), embMax = Math.max(num("embMax"),0);
+  const embR = embPct/100*embBaseR;
+  const proprio = Math.max(num("proprio"),0);
+  const fgts = seg==="imovel" ? Math.max(num("fgts"),0) : 0;
+  const lanceR = embR + proprio + fgts;
+  const lb = $("lanceBase").value;
+  const lanceBaseR = lb==="cat" ? catR : lb==="carta" ? Ck : saldoR;
+  const lanceBaseNome = lb==="cat" ? "da categoria" : lb==="carta" ? "da carta" : "do saldo devedor";
+  const lanceCompPct = lanceBaseR>0 ? lanceR/lanceBaseR*100 : 0;
+  const lanceCartaPct = Ck>0 ? lanceR/Ck*100 : 0;
+  const S2 = Math.max(saldoPct - lanceCartaPct, 0);
+  const excesso = Math.max(lanceCartaPct - saldoPct,0)/100*Ck;
+  const credLiq = Ck - embR;
+
+  // --- Cenários pós-contemplação ---
+  function gera(pcts, saldoIni){
+    let saldo = saldoIni; const rows=[];
+    pcts.forEach((p,i)=>{
+      const j = k+1+i, cj = carta(j);
+      const seguro = segOn ? segTx*saldo/100*cj : 0;
+      saldo = Math.max(saldo-p,0);
+      rows.push({j, fase:"Depois", p, valor:p/100*cj, seguro, saldoPct:saldo, saldoR:saldo/100*cj});
+    });
+    return rows;
+  }
+  const cen = {};
+  cen.semLance = {nome:"Sem lance (referência)", meses:M, pcts: Array(M).fill(saldoPct/M), saldoIni:saldoPct};
+  cen.parcela  = {nome:"Reduzir parcela", meses:M, pcts: Array(M).fill(M>0?S2/M:0), saldoIni:S2};
+  let nPrazo, pctsPrazo, prazoLimitado=false;
+  if(S2<=1e-9){ nPrazo=0; pctsPrazo=[]; }
+  else if(S2/mInt <= M + 1e-9){
+    nPrazo = Math.max(Math.ceil(S2/mInt - 1e-9),1);
+    pctsPrazo = Array(nPrazo-1).fill(mInt); pctsPrazo.push(S2 - (nPrazo-1)*mInt);
+  } else { nPrazo = M; pctsPrazo = Array(M).fill(S2/M); prazoLimitado=true; }
+  cen.prazo = {nome:"Reduzir prazo", meses:nPrazo, pcts:pctsPrazo, saldoIni:S2, limitado:prazoLimitado};
+  const minC = Math.max(nPrazo,1), maxC = Math.max(M,1);
+  const cm = $("customM");
+  cm.min = minC; cm.max = maxC;
+  let mc = parseInt(cm.dataset.v,10); if(!isFinite(mc)) mc=Math.round((minC+maxC)/2);
+  mc = clamp(mc,minC,maxC); cm.value = mc; cm.dataset.v = mc;
+  cen.custom = {nome:"Personalizado", meses: S2>0? mc:0, pcts: S2>0? Array(mc).fill(S2/mc):[], saldoIni:S2};
+  if(S2<=1e-9){ cen.parcela.meses=0; cen.parcela.pcts=[]; }
+
+  Object.entries(cen).forEach(([key,c])=>{
+    c.rows = gera(c.pcts, c.saldoIni);
+    c.pFirst = c.pcts.length? c.pcts[0] : 0;
+    c.valorHoje = c.pFirst/100*Ck;
+    c.seguroFirst = c.rows.length ? c.rows[0].seguro : 0;
+    const extra = key==="semLance" ? 0 : proprio + fgts;
+    c.totalHoje = c.pcts.reduce((a,p)=>a+p,0)/100*Ck + extra;
+    c.totalProj = c.rows.reduce((a,x)=>a+x.valor+x.seguro,0) + extra;
+  });
+  const esc = cen[modo];
+
+  // --- Custo efetivo (TIR) ---
+  const fluxos = Array(N+1).fill(0);
+  pre.forEach(x=>fluxos[x.j]-= (x.valor+x.seguro));
+  fluxos[k] += credLiq - proprio - fgts;
+  esc.rows.forEach(x=>fluxos[x.j]-= (x.valor+x.seguro));
+  const tirM = tir(fluxos);
+  const totalPre = pre.reduce((a,x)=>a+x.valor+x.seguro,0);
+  const totalPagoProj = totalPre + esc.rows.reduce((a,x)=>a+x.valor+x.seguro,0) + proprio + fgts;
+
+  // --- Sensibilidade: e se a contemplação for em outro mês? (cota nova) ---
+  const sens = [];
+  if(!ex){
+    const ks = [...new Set([6,12,18,24,36,48,60,84,120,160,k].filter(x=>x>=1 && x<=N-1))].sort((a,b)=>a-b);
+    ks.forEach(kk=>{
+      const {pago:pg} = preFase(kk);
+      const Ckk = carta(kk), catRk = Ckk*cat/100, sald = cat-pg;
+      const eR = embPct/100*($("embBase").value==="cat" ? catRk : Ckk);
+      const lR = eR + proprio + fgts;
+      const s2 = Math.max(sald - lR/Ckk*100, 0), Mk = N-kk;
+      const nP = s2>1e-9 ? Math.min(Math.ceil(s2/mInt - 1e-9), Mk) : 0;
+      sens.push({k:kk, s2R:s2/100*Ckk, parc: Mk>0? s2/Mk/100*Ckk : 0, Mk, nP, excede: lR > sald/100*Ckk + 0.5});
+    });
+  }
+
+  return {seg,ex,C,N,TA,FR,cat,FC,ADM,mInt,red,redMeses,segOn,segTx,reajOn,r,k,Ck,catR,pago,saldoPct,saldoR,carta,
+          embR,embPct,embMax,proprio,fgts,lanceR,lanceBaseR,lanceBaseNome,lanceCompPct,lanceCartaPct,S2,excesso,credLiq,M,
+          cen,esc,pre,p1,tirM,totalPre,totalPagoProj,sens};
+}
+
+function tir(f){
+  const npv = i => f.reduce((a,v,t)=>a+v/Math.pow(1+i,t),0);
+  let lo=-0.05, hi=0.2, flo=npv(lo), fhi=npv(hi);
+  if(!isFinite(flo)||!isFinite(fhi)||flo*fhi>0) return NaN;
+  for(let n=0;n<200;n++){ const m=(lo+hi)/2, fm=npv(m); if(flo*fm<=0){hi=m;fhi=fm;} else {lo=m;flo=fm;} }
+  return (lo+hi)/2;
+}
+
+/* Financiamento SAC ou Price, com seguro % a.m. sobre o saldo */
+function financia(P, i, n, sis, segM){
+  const parcelas=[]; let saldo=P;
+  const pmt = n<=0?0 : (i===0? P/n : P*i/(1-Math.pow(1+i,-n)));
+  for(let t=1;t<=n;t++){
+    const juros = saldo*i;
+    const amort = sis==="sac" ? P/n : pmt-juros;
+    const parc = amort + juros + saldo*segM;
+    saldo = Math.max(saldo-amort,0);
+    parcelas.push(parc);
+  }
+  const total = parcelas.reduce((a,b)=>a+b,0);
+  const cet = P>0 && n>0 ? tir([P, ...parcelas.map(x=>-x)]) : NaN;
+  return {parcelas, total, primeira:parcelas[0]||0, ultima:parcelas[n-1]||0, cet};
+}
+
+/* ---------------- Renderização ---------------- */
+function render(){
+  const s = simula(); ultimo = s;
+  const seg = s.seg;
+  const esc = s.esc;
+
+  // Visibilidade condicional
+  $("boxMes").style.display = s.ex ? "none":"block";
+  $("boxEx").style.display = s.ex ? "block":"none";
+  $("boxRedMeses").style.display = (!s.ex && s.red>0) ? "block":"none";
+  $("boxSeg").style.display = s.segOn ? "block":"none";
+  $("boxReaj").style.display = s.reajOn ? "block":"none";
+  $("boxFgts").style.display = seg==="imovel" ? "block":"none";
+  $("boxCustom").style.display = modo==="custom" ? "block":"none";
+  $("cardSens").style.display = s.ex ? "none":"block";
+  $("boxAluguel").style.display = (seg==="imovel" && !s.ex) ? "block":"none";
+  $("dicaTipo").textContent = s.ex
+    ? "Cliente já está no grupo: use os dados do extrato. É a simulação mais precisa."
+    : "Cliente ainda vai entrar: o mês de contemplação é uma premissa. Mostre a tabela de outros meses.";
+  $("dicaReaj").textContent = "Índice do segmento: "+PADROES[seg].idx+". Aplicado a cada 12 meses (aniversário do grupo).";
+  $("mesRange").max = s.N-1; $("mesRange").value = s.k; $("mes").max = s.N-1; $("lblMes").textContent = s.k+"ª";
+  $("lblCustom").textContent = $("customM").value+" meses";
+  $("dicaEmb").textContent = s.embPct>0 ? "= "+brl(s.embR)+" saindo da carta" : "Opcional. Limite conforme o regulamento do grupo (padrão 30% da categoria).";
+
+  // Alertas
+  const al=[];
+  if(s.embPct > s.embMax) al.push(["erro","Embutido de "+pct(s.embPct,1)+" acima do limite de "+pct(s.embMax,0)+" configurado para o grupo."]);
+  if(s.excesso>0.5) al.push(["erro","O lance ("+brl(s.lanceR)+") é maior que o saldo devedor ("+brl(s.saldoR)+"). Lance máximo: "+brl(s.saldoR)+"."]);
+  else if(s.S2<=1e-9 && s.lanceR>0) al.push(["ok","Lance quita o saldo devedor — não restam parcelas."]);
+  if(s.credLiq < s.Ck*0.5) al.push(["warn","Crédito líquido ficou abaixo de 50% da carta — confira se ainda compra o bem desejado."]);
+  if(s.cen.prazo.limitado && modo==="prazo") al.push(["warn","Mesmo abatendo o lance, o saldo não cabe na parcela integral dentro do prazo restante (efeito da parcela reduzida). A parcela foi recalculada pelo prazo restante."]);
+  if(s.ex && num("exPct")>s.cat) al.push(["erro","% já pago maior que a categoria ("+pct(s.cat,2)+"). Confira o extrato."]);
+  if(!s.ex && s.red>0) al.push(["info","Na contemplação, a parcela reduzida volta ao valor cheio e a diferença não paga é diluída no saldo."]);
+  if(s.lanceR===0) al.push(["info","Sem lance informado: o resultado mostra a parcela pós-contemplação por sorteio."]);
+  if(!s.ex) al.push(["info","Premissa: contemplação na "+s.k+"ª parcela. O resultado muda conforme o mês real — veja a tabela de sensibilidade."]);
+  $("alertas").innerHTML = al.map(a=>`<div class="alerta ${a[0]}">${a[1]}</div>`).join("");
+
+  // KPIs
+  const p1v = s.p1.valor + s.p1.seguro;
+  $("kParcAntes").previousElementSibling.textContent = s.ex ? "Parcela atual (estimada)" : "Parcela até contemplar";
+  $("kParcAntes").textContent = brl(p1v);
+  $("kParcAntesSub").textContent = s.ex ? "saldo atual ÷ "+s.M+" parcelas restantes"+(s.segOn?" · c/ seguro":"")
+    : (s.red>0? "reduzida "+(s.red*100)+"% · integral "+brl(s.mInt/100*s.C) : pct(s.mInt,4)+" da carta/mês") + (s.segOn?" · c/ seguro":"");
+  const novaV = esc.valorHoje + esc.seguroFirst;
+  $("kNova").textContent = esc.meses>0 ? brl(novaV) : "Quitado";
+  const integralK = s.mInt/100*s.Ck;
+  const varP = integralK>0 ? (esc.valorHoje/integralK - 1)*100 : 0;
+  $("kNovaSub").textContent = esc.meses>0 ? esc.nome+" · "+(varP<=0?"":"+")+pct(varP,1)+" vs integral" : "lance cobre todo o saldo";
+  $("kPrazo").textContent = esc.meses+" meses";
+  $("kPrazoSub").textContent = (s.M-esc.meses>0? "−"+(s.M-esc.meses)+" meses · " : "")+"término no mês "+(s.k+esc.meses);
+  $("kPct").textContent = pct(s.lanceCompPct,2);
+  $("kPctSub").textContent = s.lanceBaseNome+" ("+brl(s.lanceBaseR)+")";
+  $("kCred").textContent = brl(s.credLiq);
+  $("kCredSub").textContent = s.embR>0? "carta "+brl(s.Ck)+" − embutido "+brl(s.embR) : "carta integral"+(s.reajOn&&s.k>12&&!s.ex?" (reajustada)":"");
+  $("kDesemb").textContent = brl(s.proprio+s.fgts);
+  $("kDesembSub").textContent = "próprio "+brl(s.proprio)+(s.fgts>0?" · FGTS "+brl(s.fgts):"")+" · prazo de pagamento conforme regulamento";
+
+  // Cenários
+  const refv = s.cen.semLance.valorHoje + s.cen.semLance.seguroFirst;
+  const linhas = [["semLance",s.cen.semLance],["parcela",s.cen.parcela],["prazo",s.cen.prazo],["custom",s.cen.custom]];
+  $("tbCen").innerHTML = linhas.map(([key,c])=>{
+    const v = c.valorHoje + c.seguroFirst;
+    const eco = key==="semLance" ? "—" : brl(refv - v);
+    return `<tr class="${key===modo?'sel':''}"><td>${c.nome}${key==="prazo"&&c.limitado?' <span class="pill">limitado</span>':''}</td><td>${c.meses>0?brl(v):"—"}</td><td>${c.meses} m</td><td>${eco}</td><td>${brl(c.totalHoje)}</td><td>${brl(c.totalProj)}</td></tr>`;
+  }).join("");
+  const difPP = s.cen.parcela.totalProj - s.cen.prazo.totalProj;
+  $("cenNota").innerHTML = (difPP > 1 && s.cen.prazo.meses < s.cen.parcela.meses)
+    ? `<div class="alerta ok">Com reajuste/seguro projetados, <b>reduzir prazo custa ${brl(difPP)} a menos</b> que reduzir parcela (menos meses de reajuste e de seguro). Em troca, a parcela mensal fica maior.</div>`
+    : ((s.reajOn||s.segOn) ? "" : `<div class="alerta info">Ative o reajuste anual (e o seguro, se houver) para ver a diferença real de custo entre reduzir parcela e reduzir prazo.</div>`);
+
+  // Sensibilidade
+  $("tbSens").innerHTML = s.sens.map(x=>`<tr class="${x.k===s.k?'sel':''}"><td>${x.k}ª parcela</td><td>${x.excede?'<span class="pill">lance > saldo</span>':brl(x.s2R)}</td><td>${x.Mk>0&&!x.excede?brl(x.parc):'—'}</td><td>${x.Mk}</td><td>${x.excede?'—':x.nP+' m'}</td></tr>`).join("");
+
+  // Contemplação
+  const pagoR = s.pago/100*s.Ck;
+  $("lstContemp").innerHTML = `
+    <div>Carta de crédito ${s.ex?'(extrato)':(s.reajOn&&s.k>12?'(reajustada)':'')}</div><div class="r">${brl(s.Ck)}</div>
+    <div>Valor da categoria (${pct(s.cat,2)})</div><div class="r">${brl(s.catR)}</div>
+    <div>Já amortizado (${s.k} parcelas)</div><div class="r">${pct(s.pago,2)} · ${brl(pagoR)}</div>
+    <div>Saldo devedor antes do lance</div><div class="r">${pct(s.saldoPct,2)} · ${brl(s.saldoR)}</div>
+    <div>(−) Lance embutido</div><div class="r">${brl(s.embR)}</div>
+    <div>(−) Recursos próprios</div><div class="r">${brl(s.proprio)}</div>
+    ${s.seg==="imovel"?`<div>(−) FGTS</div><div class="r">${brl(s.fgts)}</div>`:''}
+    <div class="tot">Saldo devedor após o lance</div><div class="r tot">${pct(s.S2,2)} · ${brl(s.S2/100*s.Ck)}</div>
+    <div>Lance total</div><div class="r">${brl(s.lanceR)} · ${pct(s.lanceCompPct,2)} ${s.lanceBaseNome}</div>`;
+
+  // Composição (proporcional sobre a parcela integral)
+  const fatorAntes = s.ex ? s.p1.p/s.mInt : 1;
+  const cartaAntes = s.ex ? s.Ck : s.C;
+  const antesFC = (!s.ex && s.red>0 && 1<=s.redMeses ? s.FC*(1-s.red) : s.FC*fatorAntes)/100*cartaAntes;
+  const antesTA = s.TA/s.N/100*cartaAntes*fatorAntes, antesFR = s.FR/s.N/100*cartaAntes*fatorAntes;
+  const fatorPos = esc.meses>0 ? esc.pFirst / s.mInt : 0;
+  const depFC = s.FC/100*s.Ck*fatorPos, depTA = s.TA/s.N/100*s.Ck*fatorPos, depFR = s.FR/s.N/100*s.Ck*fatorPos;
+  const segA = s.p1.seguro, segD = esc.seguroFirst;
+  $("tbComp").innerHTML = `
+    <tr><td>Fundo comum</td><td>${brl(antesFC)}</td><td>${brl(depFC)}</td></tr>
+    <tr><td>Taxa de administração</td><td>${brl(antesTA)}</td><td>${brl(depTA)}</td></tr>
+    <tr><td>Fundo de reserva</td><td>${brl(antesFR)}</td><td>${brl(depFR)}</td></tr>
+    ${s.segOn?`<tr><td>Seguro prestamista</td><td>${brl(segA)}</td><td>${brl(segD)}</td></tr>`:''}
+    <tr class="sel"><td>Total</td><td>${brl(antesFC+antesTA+antesFR+segA)}</td><td>${esc.meses>0?brl(depFC+depTA+depFR+segD):'—'}</td></tr>`;
+
+  // Custo efetivo
+  const custoTotal = (s.TA+s.FR)/100*s.Ck;
+  const tirA = isFinite(s.tirM) ? (Math.pow(1+s.tirM,12)-1)*100 : NaN;
+  $("lstCusto").innerHTML = `
+    <div>Taxas do plano (TA + FR)</div><div class="r">${brl(custoTotal)}</div>
+    <div>Taxa equivalente ao ano (linear)</div><div class="r">${pct((s.TA+s.FR)/(s.N/12),2)} a.a.</div>
+    <div>Total pago projetado${s.ex?' (daqui em diante)':''}</div><div class="r">${brl(s.totalPagoProj)}</div>
+    <div>Crédito líquido recebido</div><div class="r">${brl(s.credLiq)}</div>
+    <div class="tot">Custo efetivo (TIR)</div><div class="r tot">${isFinite(s.tirM)? pct(s.tirM*100,3)+" a.m. · "+pct(tirA,2)+" a.a." : "n/d"}</div>`;
+
+  // Financiamento — jornada completa
+  const iF = num("taxaFin")/100, nF = Math.max(Math.round(num("prazoFin")),1), sis=$("sisFin").value, segF=num("segFin")/100;
+  const entrada = s.proprio + s.fgts;
+  const bem = s.ex ? s.credLiq : s.credLiq * (s.Ck>0 ? s.C/s.Ck : 1); // bem a preço de hoje
+  const P = Math.max(bem - entrada,0);
+  const fin = financia(P, iF, nF, sis, segF);
+  const totFin = fin.total + entrada;
+  const aluguel = (seg==="imovel" && !s.ex) ? Math.max(num("aluguel"),0) : 0;
+  const custoEspera = aluguel * s.k;
+  const totCons = s.totalPagoProj + custoEspera;
+  const cetA = isFinite(fin.cet) ? (Math.pow(1+fin.cet,12)-1)*100 : NaN;
+  $("lstFin").innerHTML = `
+    <div>Valor do bem (a preço de hoje)</div><div class="r">${brl(bem)}</div>
+    <div>Entrada (= recursos do lance)</div><div class="r">${brl(entrada)}</div>
+    <div>Valor financiado · ${sis.toUpperCase()} · ${nF} m</div><div class="r">${brl(P)}</div>
+    <div>1ª / última parcela do financiamento</div><div class="r">${brl(fin.primeira)} / ${brl(fin.ultima)}</div>
+    <div>CET aprox. do financiamento</div><div class="r">${isFinite(cetA)?pct(cetA,2)+" a.a.":"n/d"}</div>
+    <div class="tot">Total no financiamento</div><div class="r tot">${brl(totFin)}</div>
+    <div class="tot">Total no consórcio${s.ex?' (daqui em diante)':' (desde a 1ª parcela)'}</div><div class="r tot">${brl(totCons)}</div>
+    ${custoEspera>0?`<div>…dos quais aluguel na espera (${s.k} meses)</div><div class="r">${brl(custoEspera)}</div>`:''}`;
+  const dif = totFin - totCons;
+  $("finFrase").innerHTML = P<=0 ? "" : (dif>0
+    ? `<div class="alerta info">Nestas premissas o consórcio custa <b>${brl(dif)} a menos</b> no total, mas o bem ${s.ex?'só vem agora, após a contemplação':'só chega na contemplação (premissa: mês '+s.k+')'}. O financiamento compensa se ter o bem imediatamente vale mais que essa diferença.</div>`
+    : `<div class="alerta warn">Nestas premissas o financiamento custa <b>${brl(-dif)} a menos</b> e entrega o bem já. O consórcio só se justifica com contemplação antecipada ou condições melhores no grupo.</div>`);
+
+  // Chance de contemplação
+  const cotas = num("gCotas"), sort = num("gSort"), menor = num("gMenor"), media = num("gMedia");
+  let ch = "";
+  if(cotas>0 && sort>0){
+    const p = Math.min(sort/cotas,1), c12 = 1-Math.pow(1-p,12), c24 = 1-Math.pow(1-p,24);
+    ch += `<div>Chance só por sorteio em 12 / 24 meses</div><div class="r">${pct(c12*100,1)} / ${pct(c24*100,1)}</div>`;
+  }
+  if(menor>0){
+    const lp = s.lanceCompPct;
+    const [cls,txt] = lp < menor ? ["vermelho","abaixo do menor vencedor"] : (media>0 && lp < media) ? ["laranja-esc","na faixa dos vencedores"] : ["verde","acima da média vencedora"];
+    ch += `<div>Seu lance (${pct(lp,2)}) vs. histórico</div><div class="r" style="color:var(--${cls})">● ${txt}</div>`;
+  }
+  $("chance").innerHTML = ch || `<div style="grid-column:1/-1" class="dica">Preencha os dados do grupo para ver a chance de sorteio e a posição do lance.</div>`;
+
+  // Reversa
+  const alvo = Math.max(num("alvo"),0);
+  const necessario = alvo/100*s.lanceBaseR;
+  const embMaxR = s.embMax/100*($("embBase").value==="cat"? s.catR : s.Ck);
+  const usaEmb = Math.min(embMaxR, necessario);
+  const usaFgts = Math.min(s.fgts, Math.max(necessario-usaEmb,0));
+  const restante = Math.max(necessario - usaEmb - usaFgts,0);
+  $("reversa").innerHTML = `
+    <div>Lance necessário (${pct(alvo,1)} ${s.lanceBaseNome})</div><div class="r">${brl(necessario)}</div>
+    <div>Embutido máximo (${pct(s.embMax,0)})</div><div class="r">${brl(usaEmb)}</div>
+    ${s.seg==="imovel"&&s.fgts>0?`<div>FGTS informado</div><div class="r">${brl(usaFgts)}</div>`:''}
+    <div class="tot">Recursos próprios necessários</div><div class="r tot">${brl(restante)}</div>
+    <div>Crédito líquido nesse cenário</div><div class="r">${brl(s.Ck-usaEmb)}</div>
+    ${necessario > s.saldoR + 0.5 ? `<div style="grid-column:1/-1" class="alerta erro">Esse alvo supera o saldo devedor (${brl(s.saldoR)}).</div>`:''}`;
+
+  // Tabela mês a mês
+  const todas = s.pre.concat(esc.rows);
+  $("tbMes").innerHTML = todas.map(x=>`<tr${x.j===s.k?' class="sel"':''}><td>${x.j}</td><td>${x.j===s.k?'Contemplação':x.fase}</td><td>${pct(x.p,4)}</td><td>${brl(x.valor)}</td><td>${brl(x.seguro)}</td><td>${brl(x.valor+x.seguro)}</td><td>${brl(x.saldoR)}</td></tr>`).join("");
+
+  desenhaGrafico(s);
+  $("printIdent").textContent = [($("cliente").value?"Cliente: "+$("cliente").value:""),($("gerente").value?"Gerente: "+$("gerente").value:""),"Data: "+new Date().toLocaleDateString("pt-BR"),"Simulador desenvolvido por "+AUTOR].filter(Boolean).join("  ·  ");
+  salva();
+}
+
+function desenhaGrafico(s){
+  const svg = $("chart"), W=800, H=220, pad=28;
+  const pre = s.pre.map(x=>x.valor+x.seguro);
+  const pos = s.esc.rows.map(x=>x.valor+x.seguro);
+  const ref = s.cen.semLance.rows.map(x=>x.valor+x.seguro);
+  const max = Math.max(...pre,...pos,...ref,1)*1.1;
+  const bw = (W-pad)/s.N;
+  const y = v => H-18 - (v/max)*(H-30);
+  let out = "";
+  for(let t=0;t<=4;t++){ const v=max*t/4, yy=y(v); out+=`<line x1="${pad}" x2="${W}" y1="${yy}" y2="${yy}" stroke="#E6E8EC" stroke-width="1"/><text x="2" y="${yy+4}" font-size="10" fill="#6B7280">${(v/1000).toFixed(v<10000?1:0)}k</text>`; }
+  pre.forEach((v,i)=>{ out+=`<rect x="${pad+i*bw}" y="${y(v)}" width="${Math.max(bw-0.6,0.6)}" height="${H-18-y(v)}" fill="#163E99"/>`; });
+  pos.forEach((v,i)=>{ const idx=s.k+i; out+=`<rect x="${pad+idx*bw}" y="${y(v)}" width="${Math.max(bw-0.6,0.6)}" height="${H-18-y(v)}" fill="#EC7000"/>`; });
+  if(ref.length){ let d=""; ref.forEach((v,i)=>{ const x=pad+(s.k+i)*bw+bw/2; d+=(i?"L":"M")+x+" "+y(v); }); out+=`<path d="${d}" fill="none" stroke="#B9BEC8" stroke-width="2" stroke-dasharray="5 4"/>`; }
+  const xk = pad+s.k*bw; out+=`<line x1="${xk}" x2="${xk}" y1="8" y2="${H-18}" stroke="#0B2A6F" stroke-dasharray="3 3"/><text x="${Math.min(xk+4,W-150)}" y="16" font-size="11" fill="#0B2A6F">contemplação (mês ${s.k})</text>`;
+  [1,Math.round(s.N/4),Math.round(s.N/2),Math.round(3*s.N/4),s.N].forEach(m=>{ out+=`<text x="${pad+(m-1)*bw+(m===s.N?bw:0)}" y="${H-4}" font-size="10" fill="#6B7280" text-anchor="${m===s.N?'end':'start'}">${m}</text>`; });
+  svg.innerHTML = out;
+}
+
+/* ---------------- Ações ---------------- */
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("on"); setTimeout(()=>el.classList.remove("on"),2200); }
+$("btnZap").onclick = () => {
+  const s = ultimo; if(!s) return;
+  const e = s.esc;
+  const nomes = {imovel:"Imóvel",veiculo:"Veículo",moto:"Moto",pesados:"Pesados"};
+  const sensTxt = s.sens.length ? "\n*E se a contemplação for em outro mês?*\n"+s.sens.filter(x=>!x.excede).slice(0,6).map(x=>`   – ${x.k}ª parcela: ${brl(x.parc)} por ${x.Mk} meses`).join("\n") : "";
+  const txt =
+`*Simulação de Consórcio ${nomes[s.seg]}*${$("cliente").value?"\nCliente: "+$("cliente").value:""}
+• Carta: ${brl(s.ex?s.Ck:s.C)} · ${s.N} meses · TA ${pct(s.TA,2)} · FR ${pct(s.FR,2)}
+• ${s.ex?"Parcela atual (estimada)":"Parcela até a contemplação"}: ${brl(s.p1.valor+s.p1.seguro)}${s.red>0?" (reduzida "+(s.red*100)+"%)":""}
+• ${s.ex?"Cota com "+s.k+" parcelas pagas":"Contemplação estimada (premissa): "+s.k+"ª parcela"}
+• Lance: ${brl(s.lanceR)} (${pct(s.lanceCompPct,2)} ${s.lanceBaseNome})${s.embR>0?"\n   – embutido: "+brl(s.embR):""}${s.proprio>0?"\n   – recursos próprios: "+brl(s.proprio):""}${s.fgts>0?"\n   – FGTS: "+brl(s.fgts):""}
+• Crédito líquido para compra: ${brl(s.credLiq)}
+• *Nova parcela (${e.nome.toLowerCase()}): ${e.meses>0?brl(e.valorHoje+e.seguroFirst):"quitado"}*
+• Prazo restante: ${e.meses} meses${sensTxt}
+_Simulação não vinculante; valores na data da contemplação, sujeitos a reajuste (${PADROES[s.seg].idx}) e às regras do grupo. Confirme na proposta oficial._${$("gerente").value?"\nGerente: "+$("gerente").value:""}`;
+  const done = () => toast("Resumo copiado");
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,()=>fallbackCopy(txt)); } else fallbackCopy(txt);
+};
+function fallbackCopy(t){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy"); toast("Resumo copiado");}catch(e){ toast("Não foi possível copiar"); } ta.remove(); }
+$("btnPrint").onclick = () => { $("detTabela").open=false; window.print(); };
+$("btnCsv").onclick = () => {
+  const s = ultimo; if(!s) return;
+  const rows = [["Mes","Fase","Percentual_pago","Parcela","Seguro","Total","Saldo_devedor"]];
+  s.pre.concat(s.esc.rows).forEach(x=>rows.push([x.j,x.j===s.k?"Contemplacao":x.fase,x.p.toFixed(6).replace(".",","),x.valor.toFixed(2).replace(".",","),x.seguro.toFixed(2).replace(".",","),(x.valor+x.seguro).toFixed(2).replace(".",","),x.saldoR.toFixed(2).replace(".",",")]));
+  const blob = new Blob(["﻿"+rows.map(r=>r.join(";")).join("\n")],{type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="simulacao-consorcio.csv"; a.click();
+};
+$("btnReset").onclick = () => { restaura(true); render(); toast("Padrões restaurados"); };
+$("aplicarAlvo").onclick = () => {
+  const s = ultimo; const alvo = num("alvo");
+  const baseEmb = $("embBase").value==="cat"? s.catR : s.Ck;
+  const necessario = Math.min(alvo/100*s.lanceBaseR, s.saldoR);
+  const usaEmbR = Math.min(s.embMax/100*baseEmb, necessario);
+  $("embPct").value = (usaEmbR/baseEmb*100).toFixed(2);
+  $("proprio").value = Math.max(necessario-usaEmbR-s.fgts,0).toFixed(2);
+  render(); toast("Lance-alvo aplicado");
+};
+
+/* ---------------- Eventos ---------------- */
+$("segmento").addEventListener("change", e => { aplicaPadroesSegmento(e.target.value); if(e.target.value!=="imovel") $("fgts").value=0; render(); });
+["carta","prazo","ta","fr","reducao","redMeses","segTaxa","reaj","embPct","embBase","embMax","lanceBase","proprio","fgts",
+ "taxaFin","sisFin","prazoFin","segFin","aluguel","alvo","cliente","gerente","exPagas","exPct","exCarta","gCotas","gSort","gMenor","gMedia"]
+  .forEach(id => { $(id).addEventListener("input", render); $(id).addEventListener("change", render); });
+["segOn","reajOn"].forEach(id => $(id).addEventListener("change", render));
+$("mesRange").addEventListener("input", e => { $("mes").value = e.target.value; render(); });
+$("mes").addEventListener("input", render);
+$("prazo").addEventListener("input", () => { $("prazoFin").value = $("prazo").value; render(); });
+$("customM").addEventListener("input", e => { e.target.dataset.v = e.target.value; render(); });
+document.querySelectorAll("#segModo button").forEach(b => b.onclick = () => {
+  modo = b.dataset.m; document.querySelectorAll("#segModo button").forEach(x=>x.classList.toggle("ativo",x===b)); render();
+});
+document.querySelectorAll("#segTipo button").forEach(b => b.onclick = () => {
+  tipo = b.dataset.t; document.querySelectorAll("#segTipo button").forEach(x=>x.classList.toggle("ativo",x===b)); render();
+});
+
+$("autorNome").textContent = AUTOR;
+$("autorIni").textContent = AUTOR.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+$("autorCargo").textContent = AUTOR_CARGO; $("autorCargo").style.display = AUTOR_CARGO ? "inline" : "none";
+$("assinCargo").textContent = AUTOR_CARGO || "Simulador de consórcio";
+carregaLogo(); restaura(false); render();
+
+</script>
+</body>
+</html>
